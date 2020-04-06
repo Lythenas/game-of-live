@@ -8,13 +8,13 @@ use amethyst::error::Error;
 use amethyst::input::InputEvent;
 use amethyst::input::StringBindings;
 use amethyst::prelude::*;
+use amethyst::shrev::EventChannel;
+use amethyst::shrev::ReaderId;
 use amethyst::ui::Anchor;
 use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
 use amethyst::utils::fps_counter::FpsCounter;
-use amethyst::shrev::EventChannel;
-use amethyst::shrev::ReaderId;
 
 use log::info;
 

@@ -103,7 +103,7 @@ impl SimpleState for LoadingState {
                 },
             );
 
-            if self.time >= 5.0 {
+            if self.time >= 2.0 {
                 info!("Switching to game state");
                 Trans::Replace(Box::new(GameState::default()))
             } else {

@@ -16,6 +16,8 @@ mod states;
 mod systems;
 
 use states::LoadingState;
+use systems::CellBundle;
+use systems::CellDisplayBundle;
 use systems::FpsDisplayBundle;
 
 fn main() -> amethyst::Result<()> {
@@ -35,7 +37,9 @@ fn main() -> amethyst::Result<()> {
         InputBundle::<StringBindings>::new().with_bindings_from_file(bindings_config)?;
 
     let rendering_bundle = RenderingBundle::<DefaultBackend>::new()
-        .with_plugin(RenderToWindow::from_config_path(display_config)?.with_clear([0.0, 0.0, 0.0, 1.0]))
+        .with_plugin(
+            RenderToWindow::from_config_path(display_config)?.with_clear([0.0, 0.0, 0.0, 1.0]),
+        )
         .with_plugin(RenderFlat2D::default())
         .with_plugin(RenderUi::default());
 
@@ -45,7 +49,9 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with_bundle(rendering_bundle)?
         .with_bundle(FpsCounterBundle)?
-        .with_bundle(FpsDisplayBundle)?;
+        .with_bundle(FpsDisplayBundle)?
+        .with_bundle(CellBundle)?
+        .with_bundle(CellDisplayBundle)?;
 
     let mut game = Application::new(assets_dir, initial_state, game_data)?;
 
