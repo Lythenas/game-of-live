@@ -1,0 +1,16 @@
+[package]
+name = "game-of-live"
+version = "0.1.0"
+authors = ["Matthias Seiffert <matthias-seiffert@hotmail.de>"]
+edition = "2018"
+
+[dependencies]
+amethyst = "0.15"
+winit = "*"
+log = { version = "0.4.8", features = ["serde"] }
+
+[features]
+default = ["vulkan"]
+empty = ["amethyst/empty"]
+metal = ["amethyst/metal"]
+vulkan = ["amethyst/vulkan"]

@@ -1,0 +1,6 @@
+(
+    axes: {},
+    actions: {
+        "toggle_fps": [[Key(LControl), Key(LShift), Key(L)]]
+    },
+)
