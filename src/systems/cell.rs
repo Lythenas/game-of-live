@@ -26,9 +26,10 @@ impl<'a> System<'a> for CellSystem {
         ReadStorage<'a, Neighbors>,
         ReadExpect<'a, Time>,
         Read<'a, EventChannel<InputEvent<StringBindings>>>,
+        WriteExpect<'a, Paused>,
     );
 
-    fn run(&mut self, (entities, mut cell_storage, neighbors_storage, time, event_channel): Self::SystemData) {
+    fn run(&mut self, (entities, mut cell_storage, neighbors_storage, time, event_channel, mut paused): Self::SystemData) {
         for event in event_channel.read(&mut self.event_reader) {
             if let InputEvent::ActionPressed(action) = event {
                 if action == "increase_speed" {
@@ -37,8 +38,15 @@ impl<'a> System<'a> for CellSystem {
                 } else if action == "decrease_speed" {
                     self.delay -= 0.2;
                     info!("Delay {}", self.delay);
+                } else if action == "toggle_pause" {
+                    paused.0 = !paused.0;
+                    info!("Paused {:?}", paused.0);
                 }
             }
+        }
+
+        if paused.0 {
+            return;
         }
 
         self.timer += time.delta_seconds();
@@ -95,6 +103,9 @@ pub enum CellState {
     Dead,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Paused(bool);
+
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Neighbors {
     pub n: Option<Entity>,
@@ -146,6 +157,8 @@ impl<'a, 'b> SystemBundle<'a, 'b> for CellBundle {
             delay: 1.0,
             event_reader,
         };
+
+        world.insert(Paused(false));
 
         builder.add(system, "cell_system", &[]);
         Ok(())
