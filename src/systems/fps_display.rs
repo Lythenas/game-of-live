@@ -16,8 +16,6 @@ use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
 use amethyst::utils::fps_counter::FpsCounter;
 
-use log::info;
-
 pub struct FpsText(pub Entity);
 
 /// Display fps counter (sample_fps) in the top left corner.
@@ -45,7 +43,6 @@ impl<'a> System<'a> for FpsDisplaySystem {
         (input_events, mut hidden_storage, fps_counter, mut ui_text, fps_text, time): Self::SystemData,
     ) {
         for event in input_events.read(&mut self.event_reader) {
-            // info!("{:?}", event);
             if let InputEvent::ActionPressed(action) = event {
                 if action == "toggle_fps" {
                     if hidden_storage.contains(fps_text.0) {

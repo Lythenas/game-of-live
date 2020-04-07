@@ -19,6 +19,7 @@ use states::LoadingState;
 use systems::CellBundle;
 use systems::CellDisplayBundle;
 use systems::FpsDisplayBundle;
+use states::game::BoardConfig;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -30,8 +31,11 @@ fn main() -> amethyst::Result<()> {
 
     let display_config = configs_dir.join("display.ron");
     let bindings_config = configs_dir.join("bindings.ron");
+    let board_config = configs_dir.join("board.ron");
 
     let initial_state = LoadingState::default();
+
+    let board_config = BoardConfig::load(&board_config)?;
 
     let input_bundle =
         InputBundle::<StringBindings>::new().with_bindings_from_file(bindings_config)?;
@@ -53,7 +57,9 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(CellBundle)?
         .with_bundle(CellDisplayBundle)?;
 
-    let mut game = Application::new(assets_dir, initial_state, game_data)?;
+    let mut game = Application::build(assets_dir, initial_state)?
+        .with_resource(board_config)
+        .build(game_data)?;
 
     game.run();
     Ok(())

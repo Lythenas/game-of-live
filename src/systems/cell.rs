@@ -4,12 +4,19 @@ use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::error::Error;
 use amethyst::prelude::*;
+use amethyst::input::InputEvent;
+use amethyst::input::StringBindings;
+use amethyst::shrev::EventChannel;
+use amethyst::shrev::ReaderId;
 
 use log::info;
 
 #[derive(SystemDesc)]
 pub struct CellSystem {
     timer: f32,
+    /// Delay between cell simulation update (in seconds).
+    delay: f32,
+    event_reader: ReaderId<InputEvent<StringBindings>>,
 }
 
 impl<'a> System<'a> for CellSystem {
@@ -18,18 +25,30 @@ impl<'a> System<'a> for CellSystem {
         WriteStorage<'a, Cell>,
         ReadStorage<'a, Neighbors>,
         ReadExpect<'a, Time>,
+        Read<'a, EventChannel<InputEvent<StringBindings>>>,
     );
 
-    fn run(&mut self, (entities, mut cell_storage, neighbors_storage, time): Self::SystemData) {
+    fn run(&mut self, (entities, mut cell_storage, neighbors_storage, time, event_channel): Self::SystemData) {
+        for event in event_channel.read(&mut self.event_reader) {
+            if let InputEvent::ActionPressed(action) = event {
+                if action == "increase_speed" {
+                    self.delay += 0.2;
+                    info!("Delay {}", self.delay);
+                } else if action == "decrease_speed" {
+                    self.delay -= 0.2;
+                    info!("Delay {}", self.delay);
+                }
+            }
+        }
+
         self.timer += time.delta_seconds();
 
-        if self.timer > 1.0 {
+        if self.timer > self.delay {
             self.timer = 0.0;
 
             let mut kill_cells = Vec::new();
             let mut revive_cells = Vec::new();
 
-            info!("------------");
             for (entity, cell, neighbors) in (&entities, &cell_storage, &neighbors_storage).join() {
                 let alive_neighbors = neighbors.get_num_alive(&cell_storage);
                 if cell.state == CellState::Dead {
@@ -37,13 +56,11 @@ impl<'a> System<'a> for CellSystem {
                     if alive_neighbors == 3 {
                         revive_cells.push(entity);
                     }
-                    info!("{},{} has {} heighbors. reviving", cell.x, cell.y, alive_neighbors);
                 } else {
                     // alive cell
                     if alive_neighbors < 2 || alive_neighbors > 3 {
                         kill_cells.push(entity);
                     }
-                    info!("{},{} has {} heighbors. killing", cell.x, cell.y, alive_neighbors);
                 }
             }
 
@@ -119,7 +136,18 @@ impl<'a, 'b> SystemBundle<'a, 'b> for CellBundle {
         world: &mut World,
         builder: &mut DispatcherBuilder<'a, 'b>,
     ) -> Result<(), Error> {
-        builder.add(CellSystem { timer: 0.0 }, "cell_system", &[]);
+        let event_reader = world.exec(
+            |mut input_channel: Write<EventChannel<InputEvent<StringBindings>>>| {
+                input_channel.register_reader()
+            },
+        );
+        let system = CellSystem {
+            timer: 0.0,
+            delay: 1.0,
+            event_reader,
+        };
+
+        builder.add(system, "cell_system", &[]);
         Ok(())
     }
 }

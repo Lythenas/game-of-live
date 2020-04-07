@@ -9,15 +9,11 @@ use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
 
+use serde::{Serialize, Deserialize};
+
 use crate::systems::{Cell, CellState, Neighbors};
 
-const SIZE: f32 = 50.0;
-const BOARD_X_MIN: i32 = -5;
-const BOARD_X_MAX: i32 = 5;
-const BOARD_Y_MIN: i32 = -5;
-const BOARD_Y_MAX: i32 = 5;
-
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct GameState;
 
 impl SimpleState for GameState {
@@ -31,26 +27,32 @@ impl SimpleState for GameState {
             &world.read_resource(),
         );
 
+        let board: BoardConfig = (*world.read_resource::<BoardConfig>()).clone();
+
         let mut alives = HashSet::new();
-        alives.insert((1, 0));
-        alives.insert((2, 1));
-        alives.insert((0, 2));
-        alives.insert((1, 2));
-        alives.insert((2, 2));
+
+        for y in 0..board.board.len() {
+            let row = &board.board[y];
+            for x in 0..row.len() {
+                if row[x] == 1 {
+                    alives.insert((x as i32, y as i32));
+                }
+            }
+        }
 
         let mut entities = HashMap::new();
 
-        for y in BOARD_Y_MIN..=BOARD_Y_MAX {
-            for x in BOARD_X_MIN..=BOARD_X_MAX {
+        for y in board.min_y..=board.max_y {
+            for x in board.min_x..=board.max_x {
                 let text_transform = UiTransform::new(
                     format!("cell_{}_{}", x, y).to_string(),
                     Anchor::Middle,
                     Anchor::Middle,
-                    x as f32 * SIZE,
-                    y as f32 * SIZE,
+                    x as f32 * board.tile_size,
+                    y as f32 * board.tile_size,
                     1.,
-                    SIZE,
-                    SIZE,
+                    board.tile_size,
+                    board.tile_size,
                 );
 
                 let entity = world
@@ -69,7 +71,7 @@ impl SimpleState for GameState {
                         font.clone(),
                         "".to_string(),
                         [1., 1., 1., 1.],
-                        SIZE,
+                        board.tile_size,
                     ))
                     .build();
 
@@ -78,46 +80,46 @@ impl SimpleState for GameState {
         }
 
         world.exec(|mut neighbors_store: WriteStorage<Neighbors>| {
-            for y in BOARD_Y_MIN..=BOARD_Y_MAX {
-                for x in BOARD_X_MIN..=BOARD_X_MAX {
+            for y in board.min_y..=board.max_y {
+                for x in board.min_x..=board.max_x {
                     let entity = entities.get(&(x, y)).unwrap();
                     let neighbors = Neighbors {
-                        n: if y == BOARD_Y_MIN {
+                        n: if y == board.min_y {
                             None
                         } else {
                             Some(entities.get(&(x, y - 1)).unwrap().clone())
                         },
-                        ne: if y == BOARD_Y_MIN || x == BOARD_X_MAX {
+                        ne: if y == board.min_y || x == board.max_x {
                             None
                         } else {
                             Some(entities.get(&(x + 1, y - 1)).unwrap().clone())
                         },
-                        e: if x == BOARD_X_MAX {
+                        e: if x == board.max_x {
                             None
                         } else {
                             Some(entities.get(&(x + 1, y)).unwrap().clone())
                         },
-                        se: if x == BOARD_X_MAX || y == BOARD_Y_MAX {
+                        se: if x == board.max_x || y == board.max_y {
                             None
                         } else {
                             Some(entities.get(&(x + 1, y + 1)).unwrap().clone())
                         },
-                        s: if y == BOARD_Y_MAX {
+                        s: if y == board.max_y {
                             None
                         } else {
                             Some(entities.get(&(x, y + 1)).unwrap().clone())
                         },
-                        sw: if y == BOARD_Y_MAX || x == BOARD_X_MIN {
+                        sw: if y == board.max_x || x == board.min_x {
                             None
                         } else {
                             Some(entities.get(&(x - 1, y + 1)).unwrap().clone())
                         },
-                        w: if x == BOARD_X_MIN {
+                        w: if x == board.min_x {
                             None
                         } else {
                             Some(entities.get(&(x - 1, y)).unwrap().clone())
                         },
-                        nw: if x == BOARD_X_MIN || y == BOARD_Y_MIN {
+                        nw: if x == board.min_x || y == board.min_y {
                             None
                         } else {
                             Some(entities.get(&(x - 1, y - 1)).unwrap().clone())
@@ -129,7 +131,30 @@ impl SimpleState for GameState {
         });
     }
 
-    fn update(&mut self, _data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
+    fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
         Trans::None
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct BoardConfig {
+    tile_size: f32,
+    min_x: i32,
+    max_x: i32,
+    min_y: i32,
+    max_y: i32,
+    board: Vec<Vec<u8>>,
+}
+
+impl Default for BoardConfig {
+    fn default() -> Self {
+        Self {
+            tile_size: 16.0,
+            min_x: -20,
+            max_x: 20,
+            min_y: -20,
+            max_y: 20,
+            board: Vec::new(),
+        }
     }
 }
