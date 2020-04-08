@@ -1,13 +1,18 @@
+use std::sync::mpsc::channel;
+
 use amethyst::core::SystemBundle;
 use amethyst::core::Time;
 use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::error::Error;
-use amethyst::prelude::*;
 use amethyst::input::InputEvent;
 use amethyst::input::StringBindings;
+use amethyst::prelude::*;
 use amethyst::shrev::EventChannel;
 use amethyst::shrev::ReaderId;
+use amethyst::ui::UiText;
+use amethyst::core::Hidden;
+use amethyst::renderer::SpriteRender;
 
 use log::info;
 
@@ -24,12 +29,26 @@ impl<'a> System<'a> for CellSystem {
         Entities<'a>,
         WriteStorage<'a, Cell>,
         ReadStorage<'a, Neighbors>,
+        WriteStorage<'a, SpriteRender>,
+        WriteStorage<'a, UiText>,
         ReadExpect<'a, Time>,
         Read<'a, EventChannel<InputEvent<StringBindings>>>,
         WriteExpect<'a, Paused>,
     );
 
-    fn run(&mut self, (entities, mut cell_storage, neighbors_storage, time, event_channel, mut paused): Self::SystemData) {
+    fn run(
+        &mut self,
+        (
+            entities,
+            mut cell_storage,
+            neighbors_storage,
+            mut sprite_render_storage,
+            mut ui_text,
+            time,
+            event_channel,
+            mut paused,
+        ): Self::SystemData,
+    ) {
         for event in event_channel.read(&mut self.event_reader) {
             if let InputEvent::ActionPressed(action) = event {
                 if action == "increase_speed" {
@@ -54,33 +73,49 @@ impl<'a> System<'a> for CellSystem {
         if self.timer > self.delay {
             self.timer = 0.0;
 
-            let mut kill_cells = Vec::new();
-            let mut revive_cells = Vec::new();
+            // iterate over all cells in parallel and use channels to collect
+            // which cells to kill or revive
+            let (kill_sender, kill_receiver) = channel();
+            let (revive_sender, revive_receiver) = channel();
 
-            for (entity, cell, neighbors) in (&entities, &cell_storage, &neighbors_storage).join() {
-                let alive_neighbors = neighbors.get_num_alive(&cell_storage);
-                if cell.state == CellState::Dead {
-                    // dead cell
-                    if alive_neighbors == 3 {
-                        revive_cells.push(entity);
-                    }
-                } else {
-                    // alive cell
-                    if alive_neighbors < 2 || alive_neighbors > 3 {
-                        kill_cells.push(entity);
-                    }
-                }
-            }
+            (&entities, &cell_storage, &neighbors_storage)
+                .par_join()
+                .for_each_with(
+                    (kill_sender, revive_sender),
+                    |(kill, revive), (entity, cell, neighbors)| {
+                        let alive_neighbors = neighbors.get_num_alive(&cell_storage);
+                        if cell.state == CellState::Dead {
+                            // dead cell
+                            if alive_neighbors == 3 {
+                                revive.send(entity).unwrap();
+                            }
+                        } else {
+                            // alive cell
+                            if alive_neighbors < 2 || alive_neighbors > 3 {
+                                kill.send(entity).unwrap();
+                            }
+                        }
+                    },
+                );
+
+            let kill_cells: Vec<_> = kill_receiver.iter().collect();
+            let revive_cells: Vec<_> = revive_receiver.iter().collect();
 
             for entity in kill_cells {
                 cell_storage
                     .get_mut(entity)
                     .map(|c| c.state = CellState::Dead);
+                // ui_text.get_mut(entity).map(|t| t.text = "-".to_string());
+                // hidden_storage.insert(entity, Hidden);
+                sprite_render_storage.get_mut(entity).map(|s| s.sprite_number = 1);
             }
             for entity in revive_cells {
                 cell_storage
                     .get_mut(entity)
                     .map(|c| c.state = CellState::Alive);
+                // ui_text.get_mut(entity).map(|t| t.text = "#".to_string());
+                // hidden_storage.remove(entity);
+                sprite_render_storage.get_mut(entity).map(|s| s.sprite_number = 0);
             }
         }
     }
@@ -124,17 +159,19 @@ impl Component for Neighbors {
 
 impl Neighbors {
     fn get_num_alive<'a>(&self, cell_storage: &WriteStorage<'a, Cell>) -> usize {
-        return [self.n, self.ne, self.e, self.se, self.s, self.sw, self.w, self.nw]
-            .iter()
-            .map(|n| n.as_ref().and_then(|e| cell_storage.get(*e)))
-            .filter(|c| match *c {
-                Some(Cell {
-                    state: CellState::Alive,
-                    ..
-                }) => true,
-                _ => false,
-            })
-            .count();
+        return [
+            self.n, self.ne, self.e, self.se, self.s, self.sw, self.w, self.nw,
+        ]
+        .iter()
+        .map(|n| n.as_ref().and_then(|e| cell_storage.get(*e)))
+        .filter(|c| match *c {
+            Some(Cell {
+                state: CellState::Alive,
+                ..
+            }) => true,
+            _ => false,
+        })
+        .count();
     }
 }
 

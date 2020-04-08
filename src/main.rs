@@ -11,15 +11,15 @@ use amethyst::renderer::RenderingBundle;
 use amethyst::ui::RenderUi;
 use amethyst::ui::UiBundle;
 use amethyst::utils::fps_counter::FpsCounterBundle;
+use amethyst::utils::ortho_camera::CameraOrthoSystem;
 
 mod states;
 mod systems;
 
+use states::game::BoardConfig;
 use states::LoadingState;
 use systems::CellBundle;
-use systems::CellDisplayBundle;
 use systems::FpsDisplayBundle;
-use states::game::BoardConfig;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -52,10 +52,10 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(TransformBundle::new())?
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with_bundle(rendering_bundle)?
+        .with(CameraOrthoSystem::default(), "camera_ortho_system", &[])
         .with_bundle(FpsCounterBundle)?
         .with_bundle(FpsDisplayBundle)?
-        .with_bundle(CellBundle)?
-        .with_bundle(CellDisplayBundle)?;
+        .with_bundle(CellBundle)?;
 
     let mut game = Application::build(assets_dir, initial_state)?
         .with_resource(board_config)

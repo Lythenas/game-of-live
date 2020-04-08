@@ -1,31 +1,41 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
+use amethyst::assets::Handle;
 use amethyst::assets::Loader;
+use amethyst::core::transform::Transform;
+use amethyst::core::Hidden;
 use amethyst::ecs::prelude::*;
 use amethyst::prelude::*;
+use amethyst::renderer::SpriteRender;
+use amethyst::renderer::SpriteSheet;
 use amethyst::ui::Anchor;
 use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
+use nalgebra::base::Vector3;
+use amethyst::renderer::resources::Tint;
+use amethyst::renderer::palette::Srgba;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::systems::{Cell, CellState, Neighbors};
 
 #[derive(Debug)]
-pub struct GameState;
+pub struct GameState {
+    pub sprite_sheet_handle: Handle<SpriteSheet>,
+}
 
 impl SimpleState for GameState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
-        let font = world.read_resource::<Loader>().load(
-            "font/square.ttf",
-            TtfFormat,
-            (),
-            &world.read_resource(),
-        );
+        // let font = world.read_resource::<Loader>().load(
+        //     "font/Pixeled.ttf",
+        //     TtfFormat,
+        //     (),
+        //     &world.read_resource(),
+        // );
 
         let board: BoardConfig = (*world.read_resource::<BoardConfig>()).clone();
 
@@ -44,35 +54,47 @@ impl SimpleState for GameState {
 
         for y in board.min_y..=board.max_y {
             for x in board.min_x..=board.max_x {
-                let text_transform = UiTransform::new(
-                    format!("cell_{}_{}", x, y).to_string(),
-                    Anchor::Middle,
-                    Anchor::Middle,
+                let mut text_transform = Transform::default();
+                text_transform.set_translation_xyz(
                     x as f32 * board.tile_size,
                     y as f32 * board.tile_size,
-                    1.,
-                    board.tile_size,
-                    board.tile_size,
+                    0.0,
                 );
+                text_transform.set_scale(Vector3::new(
+                    board.tile_size / 8.0,
+                    board.tile_size / 8.0,
+                    1.0,
+                ));
 
+                // UiTransform::new(
+                //     format!("cell_{}_{}", x, y).to_string(),
+                //     Anchor::Middle,
+                //     Anchor::Middle,
+                //     x as f32 * board.tile_size,
+                //     y as f32 * board.tile_size,
+                //     1.,
+                //     board.tile_size,
+                //     board.tile_size,
+                // );
+
+                let alive = alives.contains(&(x, y));
                 let entity = world
                     .create_entity()
                     .with(Cell {
                         x,
                         y,
-                        state: if alives.contains(&(x, y)) {
+                        state: if alive {
                             CellState::Alive
                         } else {
                             CellState::Dead
                         },
                     })
                     .with(text_transform)
-                    .with(UiText::new(
-                        font.clone(),
-                        "".to_string(),
-                        [1., 1., 1., 1.],
-                        board.tile_size,
-                    ))
+                    .with(SpriteRender {
+                        sprite_sheet: self.sprite_sheet_handle.clone(),
+                        sprite_number: if alive { 0 } else { 1 },
+                    })
+                    .with(Tint(Srgba::new(0.5, 0.5, 0.5, 1.0)))
                     .build();
 
                 entities.insert((x, y), entity);

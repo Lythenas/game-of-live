@@ -16,6 +16,9 @@ use amethyst::ui::Anchor;
 use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
+use amethyst::utils::ortho_camera::CameraOrtho;
+use amethyst::utils::ortho_camera::CameraNormalizeMode;
+use amethyst::utils::ortho_camera::CameraOrthoWorldCoordinates;
 
 use log::info;
 
@@ -105,7 +108,12 @@ impl SimpleState for LoadingState {
 
             if self.time >= 2.0 {
                 info!("Switching to game state");
-                Trans::Replace(Box::new(GameState))
+                Trans::Replace(Box::new(GameState {
+                    sprite_sheet_handle: self
+                        .sprite_sheet_handle
+                        .take()
+                        .expect("sprite_sheet_handle does not exist"),
+                }))
             } else {
                 Trans::None
             }
@@ -186,11 +194,20 @@ fn init_font(world: &mut World, state: &mut LoadingState) {
 
 fn initialise_camera(world: &mut World) {
     let mut transform = Transform::default();
-    // transform.set_translation_xyz(ARENA_WIDTH * 0.5, ARENA_HEIGHT * 0.5, 1.0);
+    transform.set_translation_xyz(0.0, 0.0, 1.0);
 
     world
         .create_entity()
-        .with(Camera::standard_2d(100.0, 100.0))
+        .with(Camera::standard_2d(1920.0, 1080.0))
         .with(transform)
+        .with(CameraOrtho::new(
+                CameraNormalizeMode::Contain,
+                CameraOrthoWorldCoordinates {
+                    left: -50.0 * 30.0,
+                    right: 50.0 * 30.0,
+                    bottom: -50.0 * 30.0,
+                    top: 50.0 * 30.0,
+                }
+        ))
         .build();
 }

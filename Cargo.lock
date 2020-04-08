@@ -1319,6 +1319,7 @@ version = "0.1.0"
 dependencies = [
  "amethyst",
  "log",
+ "nalgebra",
  "serde",
  "winit 0.22.0",
 ]
