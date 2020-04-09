@@ -7,7 +7,6 @@ use amethyst::ecs::prelude::*;
 use amethyst::error::Error;
 use amethyst::input::InputEvent;
 use amethyst::input::StringBindings;
-use amethyst::prelude::*;
 use amethyst::shrev::EventChannel;
 use amethyst::shrev::ReaderId;
 use amethyst::ui::Anchor;
@@ -15,6 +14,8 @@ use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
 use amethyst::utils::fps_counter::FpsCounter;
+
+use super::UiConfig;
 
 pub struct FpsText(pub Entity);
 
@@ -26,36 +27,32 @@ pub struct FpsText(pub Entity);
 pub struct FpsDisplaySystem {
     timer: f32,
     event_reader: ReaderId<InputEvent<StringBindings>>,
+    visible: bool,
 }
 
 impl<'a> System<'a> for FpsDisplaySystem {
     type SystemData = (
-        Read<'a, EventChannel<InputEvent<StringBindings>>>,
         WriteStorage<'a, Hidden>,
         Read<'a, FpsCounter>,
         WriteStorage<'a, UiText>,
         ReadExpect<'a, FpsText>,
         ReadExpect<'a, Time>,
+        Read<'a, UiConfig>,
     );
 
     fn run(
         &mut self,
-        (input_events, mut hidden_storage, fps_counter, mut ui_text, fps_text, time): Self::SystemData,
+        (mut hidden_storage, fps_counter, mut ui_text, fps_text, time, ui_config): Self::SystemData,
     ) {
-        for event in input_events.read(&mut self.event_reader) {
-            if let InputEvent::ActionPressed(action) = event {
-                if action == "toggle_fps" {
-                    if hidden_storage.contains(fps_text.0) {
-                        hidden_storage.remove(fps_text.0);
-                    } else {
-                        hidden_storage
-                            .insert(fps_text.0, Hidden)
-                            .expect("Hidden component not found");
-                    }
-                }
+        if self.visible != ui_config.show_fps {
+            self.visible = ui_config.show_fps;
+            if self.visible {
+                hidden_storage.remove(fps_text.0);
+            } else {
+                hidden_storage.insert(fps_text.0, Hidden).unwrap();
             }
         }
-        if !hidden_storage.contains(fps_text.0) {
+        if self.visible {
             if let Some(text) = ui_text.get_mut(fps_text.0) {
                 let time = time.delta_seconds();
                 self.timer += time;
@@ -87,6 +84,7 @@ impl<'a, 'b> SystemBundle<'a, 'b> for FpsDisplayBundle {
             FpsDisplaySystem {
                 timer: 0.0,
                 event_reader,
+                visible: true,
             },
             "fps_display_system",
             &["fps_counter_system"],

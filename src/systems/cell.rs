@@ -5,23 +5,13 @@ use amethyst::core::Time;
 use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::error::Error;
-use amethyst::input::InputEvent;
-use amethyst::input::StringBindings;
-use amethyst::prelude::*;
-use amethyst::shrev::EventChannel;
-use amethyst::shrev::ReaderId;
-use amethyst::ui::UiText;
-use amethyst::core::Hidden;
 use amethyst::renderer::SpriteRender;
 
-use log::info;
+use super::RunConfig;
 
-#[derive(SystemDesc)]
+#[derive(Debug, Default, SystemDesc)]
 pub struct CellSystem {
     timer: f32,
-    /// Delay between cell simulation update (in seconds).
-    delay: f32,
-    event_reader: ReaderId<InputEvent<StringBindings>>,
 }
 
 impl<'a> System<'a> for CellSystem {
@@ -30,10 +20,8 @@ impl<'a> System<'a> for CellSystem {
         WriteStorage<'a, Cell>,
         ReadStorage<'a, Neighbors>,
         WriteStorage<'a, SpriteRender>,
-        WriteStorage<'a, UiText>,
         ReadExpect<'a, Time>,
-        Read<'a, EventChannel<InputEvent<StringBindings>>>,
-        WriteExpect<'a, Paused>,
+        Read<'a, RunConfig>,
     );
 
     fn run(
@@ -43,34 +31,17 @@ impl<'a> System<'a> for CellSystem {
             mut cell_storage,
             neighbors_storage,
             mut sprite_render_storage,
-            mut ui_text,
             time,
-            event_channel,
-            mut paused,
+            run_config,
         ): Self::SystemData,
     ) {
-        for event in event_channel.read(&mut self.event_reader) {
-            if let InputEvent::ActionPressed(action) = event {
-                if action == "increase_speed" {
-                    self.delay += 0.2;
-                    info!("Delay {}", self.delay);
-                } else if action == "decrease_speed" {
-                    self.delay -= 0.2;
-                    info!("Delay {}", self.delay);
-                } else if action == "toggle_pause" {
-                    paused.0 = !paused.0;
-                    info!("Paused {:?}", paused.0);
-                }
-            }
-        }
-
-        if paused.0 {
+        if run_config.paused {
             return;
         }
 
         self.timer += time.delta_seconds();
 
-        if self.timer > self.delay {
+        if self.timer > run_config.speed {
             self.timer = 0.0;
 
             // iterate over all cells in parallel and use channels to collect
@@ -138,9 +109,6 @@ pub enum CellState {
     Dead,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Paused(bool);
-
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct Neighbors {
     pub n: Option<Entity>,
@@ -181,23 +149,11 @@ pub struct CellBundle;
 impl<'a, 'b> SystemBundle<'a, 'b> for CellBundle {
     fn build(
         self,
-        world: &mut World,
+        _world: &mut World,
         builder: &mut DispatcherBuilder<'a, 'b>,
     ) -> Result<(), Error> {
-        let event_reader = world.exec(
-            |mut input_channel: Write<EventChannel<InputEvent<StringBindings>>>| {
-                input_channel.register_reader()
-            },
-        );
-        let system = CellSystem {
-            timer: 0.0,
-            delay: 1.0,
-            event_reader,
-        };
-
-        world.insert(Paused(false));
-
-        builder.add(system, "cell_system", &[]);
+        builder.add(CellSystem::default(), "cell_system", &[]);
         Ok(())
     }
 }
+

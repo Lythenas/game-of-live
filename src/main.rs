@@ -20,6 +20,7 @@ use states::game::BoardConfig;
 use states::LoadingState;
 use systems::CellBundle;
 use systems::FpsDisplayBundle;
+use systems::ControlBundle;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -53,6 +54,7 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(UiBundle::<StringBindings>::new())?
         .with_bundle(rendering_bundle)?
         .with(CameraOrthoSystem::default(), "camera_ortho_system", &[])
+        .with_bundle(ControlBundle)?
         .with_bundle(FpsCounterBundle)?
         .with_bundle(FpsDisplayBundle)?
         .with_bundle(CellBundle)?;
