@@ -10,10 +10,13 @@ use amethyst::input::StringBindings;
 use amethyst::prelude::*;
 use amethyst::shrev::EventChannel;
 use amethyst::shrev::ReaderId;
+use amethyst::core::Transform;
+use nalgebra::base::Vector3;
 
-use log::{debug, error};
+use log::{debug, info};
 
 use crate::utils;
+use crate::states::game::ScreenParent;
 
 #[derive(SystemDesc)]
 pub struct ControlSystem {
@@ -25,9 +28,11 @@ impl<'a> System<'a> for ControlSystem {
         Write<'a, RunConfig>,
         Write<'a, UiConfig>,
         Read<'a, EventChannel<InputEvent<StringBindings>>>,
+        ReadStorage<'a, ScreenParent>,
+        WriteStorage<'a, Transform>,
     );
 
-    fn run(&mut self, (mut run_config, mut ui_config, event_channel): Self::SystemData) {
+    fn run(&mut self, (mut run_config, mut ui_config, event_channel, camera_storage, mut transform_storage): Self::SystemData) {
         for event in event_channel.read(&mut self.event_reader) {
             if let InputEvent::ActionPressed(action) = event {
                 if action == "increase_speed" {
@@ -42,6 +47,46 @@ impl<'a> System<'a> for ControlSystem {
                 } else if action == "toggle_fps" {
                     ui_config.show_fps = !ui_config.show_fps;
                     debug!("Toggle fps ({})", ui_config.show_fps);
+                } else if action == "scroll_left" {
+                    // ui_config.camera_y -= 10;
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        transform.move_left(50.0);
+                    }
+                } else if action == "scroll_right" {
+                    // ui_config.camera_y += 10;
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        transform.move_right(50.0);
+                    }
+                } else if action == "scroll_up" {
+                    // ui_config.camera_x -= 10;
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        transform.move_up(50.0);
+                    }
+                } else if action == "scroll_down" {
+                    // ui_config.camera_x += 10;
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        transform.move_down(50.0);
+                    }
+                } else if action == "zoom_in" {
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        debug!("scale pre {:?}", transform.scale());
+                        let scale = transform.scale()[0];
+                        if scale < 10.0 {
+                            let scale = scale * 1.2;
+                            transform.set_scale(Vector3::new(scale, scale, 1.0));
+                        }
+                        debug!("scale post {:?}", transform.scale());
+                    }
+                } else if action == "zoom_out" {
+                    for (_, transform) in (&camera_storage, &mut transform_storage).join() {
+                        debug!("scale pre {:?}", transform.scale());
+                        let scale = transform.scale()[0];
+                        if scale > 0.1 {
+                            let scale = scale / 1.2;
+                            transform.set_scale(Vector3::new(scale, scale, 1.0));
+                        }
+                        debug!("scale post {:?}", transform.scale());
+                    }
                 }
             }
         }
@@ -97,4 +142,6 @@ pub struct RunConfig {
 #[derive(Debug, PartialEq, Default, Deserialize, Serialize)]
 pub struct UiConfig {
     pub show_fps: bool,
+    pub camera_x: i32,
+    pub camera_y: i32,
 }

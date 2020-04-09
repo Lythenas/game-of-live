@@ -15,6 +15,7 @@ use amethyst::ui::Anchor;
 use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
+use amethyst::core::transform::Parent;
 use nalgebra::base::Vector3;
 
 use serde::{Deserialize, Serialize};
@@ -29,6 +30,11 @@ pub struct GameState {
 impl SimpleState for GameState {
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
+
+        let parent_entity = world.create_entity()
+            .with(ScreenParent)
+            .with(Transform::default())
+            .build();
 
         // let font = world.read_resource::<Loader>().load(
         //     "font/Pixeled.ttf",
@@ -89,6 +95,7 @@ impl SimpleState for GameState {
                             CellState::Dead
                         },
                     })
+                    .with(Parent::new(parent_entity))
                     .with(text_transform)
                     .with(SpriteRender {
                         sprite_sheet: self.sprite_sheet_handle.clone(),
@@ -179,4 +186,11 @@ impl Default for BoardConfig {
             board: Vec::new(),
         }
     }
+}
+
+#[derive(Debug, Default)]
+pub struct ScreenParent;
+
+impl Component for ScreenParent {
+    type Storage = NullStorage<Self>;
 }

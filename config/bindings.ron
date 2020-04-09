@@ -5,5 +5,13 @@
         "increase_speed": [[Key(Add)]],
         "decrease_speed": [[Key(Subtract)]],
         "toggle_pause": [[Key(Space)]],
+
+        "scroll_left": [[Key(Left)]],
+        "scroll_right": [[Key(Right)]],
+        "scroll_up": [[Key(Up)]],
+        "scroll_down": [[Key(Down)]],
+
+        "zoom_in": [[Key(LControl), Key(J)]],
+        "zoom_out": [[Key(LControl), Key(K)]],
     },
 )
