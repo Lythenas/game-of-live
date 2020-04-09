@@ -16,8 +16,8 @@ use amethyst::ui::Anchor;
 use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
-use amethyst::utils::ortho_camera::CameraOrtho;
 use amethyst::utils::ortho_camera::CameraNormalizeMode;
+use amethyst::utils::ortho_camera::CameraOrtho;
 use amethyst::utils::ortho_camera::CameraOrthoWorldCoordinates;
 
 use log::info;
@@ -201,13 +201,13 @@ fn initialise_camera(world: &mut World) {
         .with(Camera::standard_2d(1920.0, 1080.0))
         .with(transform)
         .with(CameraOrtho::new(
-                CameraNormalizeMode::Contain,
-                CameraOrthoWorldCoordinates {
-                    left: -50.0 * 30.0,
-                    right: 50.0 * 30.0,
-                    bottom: -50.0 * 30.0,
-                    top: 50.0 * 30.0,
-                }
+            CameraNormalizeMode::Contain,
+            CameraOrthoWorldCoordinates {
+                left: -50.0 * 30.0,
+                right: 50.0 * 30.0,
+                bottom: -50.0 * 30.0,
+                top: 50.0 * 30.0,
+            },
         ))
         .build();
 }

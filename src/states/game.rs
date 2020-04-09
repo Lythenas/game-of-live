@@ -7,6 +7,8 @@ use amethyst::core::transform::Transform;
 use amethyst::core::Hidden;
 use amethyst::ecs::prelude::*;
 use amethyst::prelude::*;
+use amethyst::renderer::palette::Srgba;
+use amethyst::renderer::resources::Tint;
 use amethyst::renderer::SpriteRender;
 use amethyst::renderer::SpriteSheet;
 use amethyst::ui::Anchor;
@@ -14,8 +16,6 @@ use amethyst::ui::TtfFormat;
 use amethyst::ui::UiText;
 use amethyst::ui::UiTransform;
 use nalgebra::base::Vector3;
-use amethyst::renderer::resources::Tint;
-use amethyst::renderer::palette::Srgba;
 
 use serde::{Deserialize, Serialize};
 

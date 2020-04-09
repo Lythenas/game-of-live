@@ -78,7 +78,9 @@ impl<'a> System<'a> for CellSystem {
                     .map(|c| c.state = CellState::Dead);
                 // ui_text.get_mut(entity).map(|t| t.text = "-".to_string());
                 // hidden_storage.insert(entity, Hidden);
-                sprite_render_storage.get_mut(entity).map(|s| s.sprite_number = 1);
+                sprite_render_storage
+                    .get_mut(entity)
+                    .map(|s| s.sprite_number = 1);
             }
             for entity in revive_cells {
                 cell_storage
@@ -86,7 +88,9 @@ impl<'a> System<'a> for CellSystem {
                     .map(|c| c.state = CellState::Alive);
                 // ui_text.get_mut(entity).map(|t| t.text = "#".to_string());
                 // hidden_storage.remove(entity);
-                sprite_render_storage.get_mut(entity).map(|s| s.sprite_number = 0);
+                sprite_render_storage
+                    .get_mut(entity)
+                    .map(|s| s.sprite_number = 0);
             }
         }
     }
@@ -156,4 +160,3 @@ impl<'a, 'b> SystemBundle<'a, 'b> for CellBundle {
         Ok(())
     }
 }
-
