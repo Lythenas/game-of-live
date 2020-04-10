@@ -198,16 +198,23 @@ fn initialise_camera(world: &mut World) {
 
     world
         .create_entity()
-        .with(Camera::standard_2d(1920.0, 1080.0))
+        .with(Camera::standard_2d(DISPLAY_WIDTH, DISPLAY_HEIGHT))
         .with(transform)
         .with(CameraOrtho::new(
             CameraNormalizeMode::Contain,
             CameraOrthoWorldCoordinates {
-                left: -50.0 * 30.0,
-                right: 50.0 * 30.0,
-                bottom: -50.0 * 30.0,
-                top: 50.0 * 30.0,
+                left: -INTERNAL_WIDTH / 2.0,
+                right: INTERNAL_WIDTH / 2.0,
+                bottom: -INTERNAL_HEIGHT / 2.0,
+                top: INTERNAL_HEIGHT / 2.0,
             },
         ))
         .build();
 }
+
+pub const DISPLAY_WIDTH: f32 = 1920.0;
+pub const DISPLAY_HEIGHT: f32 = 1080.0;
+
+pub const INTERNAL_WIDTH: f32 = 3000.0;
+pub const INTERNAL_HEIGHT: f32 = 3000.0;
+

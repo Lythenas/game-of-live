@@ -21,6 +21,7 @@ use states::game::BoardConfig;
 use states::LoadingState;
 use systems::CellBundle;
 use systems::ControlBundle;
+use systems::DragWorldBundle;
 use systems::FpsDisplayBundle;
 
 fn main() -> amethyst::Result<()> {
@@ -58,7 +59,8 @@ fn main() -> amethyst::Result<()> {
         .with_bundle(ControlBundle::new(configs_dir))?
         .with_bundle(FpsCounterBundle)?
         .with_bundle(FpsDisplayBundle)?
-        .with_bundle(CellBundle)?;
+        .with_bundle(CellBundle)?
+        .with_bundle(DragWorldBundle)?;
 
     let mut game = Application::build(assets_dir, initial_state)?
         .with_resource(board_config)

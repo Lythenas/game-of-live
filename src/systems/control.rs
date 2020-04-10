@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 use amethyst::core::SystemBundle;
+use amethyst::core::Transform;
 use amethyst::derive::SystemDesc;
 use amethyst::ecs::prelude::*;
 use amethyst::error::Error;
@@ -10,13 +11,12 @@ use amethyst::input::StringBindings;
 use amethyst::prelude::*;
 use amethyst::shrev::EventChannel;
 use amethyst::shrev::ReaderId;
-use amethyst::core::Transform;
 use nalgebra::base::Vector3;
 
 use log::{debug, info};
 
+use super::ScreenParent;
 use crate::utils;
-use crate::states::game::ScreenParent;
 
 #[derive(SystemDesc)]
 pub struct ControlSystem {
@@ -32,7 +32,10 @@ impl<'a> System<'a> for ControlSystem {
         WriteStorage<'a, Transform>,
     );
 
-    fn run(&mut self, (mut run_config, mut ui_config, event_channel, camera_storage, mut transform_storage): Self::SystemData) {
+    fn run(
+        &mut self,
+        (mut run_config, mut ui_config, event_channel, camera_storage, mut transform_storage): Self::SystemData,
+    ) {
         for event in event_channel.read(&mut self.event_reader) {
             if let InputEvent::ActionPressed(action) = event {
                 if action == "increase_speed" {

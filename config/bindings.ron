@@ -1,11 +1,15 @@
 (
-    axes: {},
+    axes: {
+        "move_world_x": Mouse(axis: X, over_extendable: true, radius: 1.0),
+        "move_world_y": Mouse(axis: Y, over_extendable: true, radius: 1.0),
+    },
     actions: {
         "toggle_fps": [[Key(LControl), Key(LShift), Key(L)]],
         "increase_speed": [[Key(Add)]],
         "decrease_speed": [[Key(Subtract)]],
         "toggle_pause": [[Key(Space)]],
 
+        "move_world": [[Mouse(Left)]],
         "scroll_left": [[Key(Left)]],
         "scroll_right": [[Key(Right)]],
         "scroll_up": [[Key(Up)]],
